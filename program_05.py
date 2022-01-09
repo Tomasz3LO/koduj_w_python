@@ -17,6 +17,7 @@ class Game:
     def update_game(self):
         """ ta metoda będzie wywoływana z funkcji update() programu głównego """
         screen.blit(self.background_active, self.background_position)
+
     def draw_scene(self):
         # rysujemy tło
         screen.blit(self.background_active, self.background_position)
@@ -61,22 +62,23 @@ class Door:
         self.room_nymber = room_number
         self.x_left_door = door_position
         self.x_right_door = door_position
-        self.next_room_number = next_room
+        self.next_room_number = next_room_number
         self.open = open
     pass
 
-
-door_00 = Door(0, 900, 05, True)
-door_01 = Door(0, 900, 05, True)
-door_02 = Door(0, 900, 05, True)
-door_03 = Door(0, 900, 05, True)
-door_04 = Door(0, 900, 05, True)
-door_05 = Door(0, 900, 05, True)
-door_06 = Door(0, 900, 05, True)
-door_07 = Door(08, 900, 03, False)
-door_08 = Door(0, 900, 05, True)
-door_09 = Door(0, 900, 05, True)
-door_10 = Door(0, 900, 05, True)
+# tworzymy drzwi zgodnie z planem pomieszczeń
+# domyślnie każde z drzwi będzie otwarte
+door_00 = Door(0, 900, 5, True)
+door_01 = Door(0, 900, 5, True)
+door_02 = Door(0, 900, 5, True)
+door_03 = Door(0, 900, 5, True)
+door_04 = Door(0, 900, 5, True)
+door_05 = Door(0, 900, 5, True)
+door_06 = Door(0, 900, 5, True)
+door_07 = Door(8, 900, 3, False)
+door_08 = Door(0, 900, 5, True)
+door_09 = Door(0, 900, 5, True)
+door_10 = Door(0, 900, 5, True)
 
 
 
