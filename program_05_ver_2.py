@@ -1,3 +1,5 @@
+from datatime import datatime
+
 WIDTH = 1280
 HEIGHT = 640
 
@@ -7,12 +9,31 @@ class Game:
         # ustawiamy najważniejsze elementy, niektóre na stałe
         self.background_active = background_active
         self.background_position = (0, 0)
+        self.game_start = False
+        self.game_finish = False
+        self.actual_room = 5
+        self.start_time = None
+        # grafiki na rozpoczęcie i zakończenie gry
+        self.intro_canvas = Actor("intro-canvas.png")
+        self.intro_canvas.pos = (640, -160)
+        self.game_over_canvas = Actor("intro-gamover-canvas.png")
+        self.intro_canvas.pos = (320, -160)
 
         # elementy związane z bohaterem
         self.floor_level = 460
         self.hero = Actor("character-right-01.png")
         self.hero.pos = (WIDTH / 2, self.floor_level)
 
+    def draw_intro(self):
+        def draw_text(text, x_offset, y_offset, fontsize=20):
+            dcreen.draw.text (
+            text,
+            (self.intro_canvas.x + x_offset, self.intro_canvas.y + y_offset),
+            fontname = "ptsansnarrowbold" )
+            fontsize = fontsize,
+            color = (187, 96, 191)
+            )
+    # wyswietlenie ekranu startowego
 
     def update_game(self):
         """ ta metoda będzie wywoływana z funkcji update() programu głównego """
