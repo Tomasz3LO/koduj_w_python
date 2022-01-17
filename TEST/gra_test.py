@@ -18,7 +18,7 @@ class Game:
         # grafiki na rozpoczęcie i zakończenie gry
         self.intro_canvas = Actor("intro-canvas.png")
         self.intro_canvas.pos = (640, -160)
-        self.game_over_canvas = Actor("intro-gameover-canvas.jpg")
+        self.game_over_canvas = Actor("intro-gameover-canvas.png")
         self.game_over_canvas.pos = (320, -160)
 
         # elementy związane z naszym bohaterem
