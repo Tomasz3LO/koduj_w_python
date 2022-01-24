@@ -1,13 +1,12 @@
 from datetime import datetime
 
-
-
 WIDTH = 1280
 HEIGHT = 640
 
 # definicje klas
 class Game:
-    def __init__(self, background_active):
+    def __init__(self, background_active, rooms_in_game):
+
         # ustawiamy najważniejsze elementy, niektóre na stałe
         self.background_active = background_active
         self.background_position = (0, 0)
@@ -15,6 +14,7 @@ class Game:
         self.game_finish = False
         self.actual_room = 5
         self.start_time = None
+
         # grafiki na rozpoczęcie i zakończenie gry
         self.intro_canvas = Actor("intro-canvas.png")
         self.intro_canvas.pos = (640, -160)
@@ -46,11 +46,13 @@ class Game:
             (self.intro_canvas.x + x_offset, self.intro_canvas.y + y_offset),
             fontname = "ptsansnarrowbold",
             fontsize = fontsize,
-            color = (187, 96, 191)
-            )
+            color = (187, 96, 191),
+        )
+
         # wyswietlenie ekranu startowego
         self.intro_canvas.draw()
         animate(self.intro_canvas, pos=(640, 320), duration=0.3, tween = "linear")
+
         draw_text("Przygoda", -450, -200, fontsize=32)
 
         # wprowadzenie: przedstawienie histori gry, obsługa klawiszy
@@ -66,6 +68,7 @@ class Game:
             "\n\n"
             "Spacja start gry"
         )
+
         screen.draw.text(
             story,
             (self.into_canvas.x - 450, self.intro_canwas.y - 160),
@@ -74,18 +77,20 @@ class Game:
             fontsize=20,
             color=(0,0,0)
         )
+
         # opis klawiszy kontrolnych
         draw_text("otwieranie drzwi", 200,-55)
         draw_text("chodzenie w lewo", 75,175)
-        draw_text("podnoszenie", 220,175)
-        draw_text("chodzenie w prawo", 330,175)
+        draw_text("podnoszenie", 220, 175)
+        draw_text("chodzenie w prawo", 330, 175)
 
     def draw_pocket(self):
         self.pocket.draw()
         # ustalimy polozenie i odleglosci miedzy kluczami
         key_pos = [-200,-100,0,100,200]
+
         temp = 0
-    # dla każedego klucza w liście kluczy
+        # dla każedego klucza w liście kluczy
         for key in self.keys_in_pocket:
             pos = (self.pocket.x + key_pos[temp] - 45, self.pocket.y - 10)
             temp += 1
@@ -100,19 +105,24 @@ class Game:
             # jeżeli jest to mozliwe przesuwamy postać
             if self.hero.x < WIDTH - self.hero.width:
                self.hero.x += self.animation_step
+
         if direction == "left":
             if self.hero.x > self.hero.width:
                 self.hero.x -= self.animation_step
 
     # wstawiamy odpowiedni obraze animujacy ruch
     self.hero.image = f"character-{direction}-0{self.hero.frame}.png"
-    #zwiekszamy numer obrazka co bedzie pozwornie wygladalo jak ruch
+    # zwiększając numer obrazka następnym razem załadujemy inny,
+    # co będzie pozornie wyglądało jak ruch
     self.hero.frame += 1
+    #
     if self.hero.frame > 8:
         # to wracamy do 1
         self.hero.frame = 1
 
     def upade_game(self):
+
+
         if not self.game_start and keyboard.space:
             self.game_start = True
             self.start_time = datatime.now()
@@ -138,6 +148,7 @@ class Game:
             # narysuj torbe z kluczami
             self.draw_pocket()
             self.hero.draw()
+
         elif self.game_finish:
             pass
         else:
@@ -145,10 +156,10 @@ class Game:
 
 
 class Key:
-    def __init__(self, key_name, in_pocket, room_number, place_on_floor):
+    def __init__(self, file_name, in_pocket, room_number, place_on_floor):
         """ self oznacza *siebie samego* - czyli konkretny klucz """
         # te właściwości obiektu *self* przepisywane są z parametrów
-        self.key_name = key_name
+        self.file_name = file_name
         self.in_pocket = in_pocket
         self.room_number = room_number
         self.place_on_floor = place_on_floor
@@ -159,8 +170,8 @@ class Key:
 class Door:
     def __init__(self, room_number, door_position, next_room_number, open):
         self.room_number = room_number
-        self.x_left_door = door_position
-        self.x_right_door = door_position
+        self.x_left_door = door_position - (236 / 2)
+        self.x_right_door = door_position + (236 / 2)
         self.next_room_number = next_room_number
         self.open = open
     pass
@@ -238,7 +249,7 @@ room_in_game = {
 }
 
 # tworzymy zmienną gry
-game = Game(background_active)
+game = Game(background_active, room_in_game)
 
 def update():
     game.update_game()
