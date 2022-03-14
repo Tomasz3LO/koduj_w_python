@@ -14,6 +14,10 @@ class Game:
         self.game_finish = False
         self.actual_room = 5
         self.start_time = None
+        self.all_keys_found = False
+        self.show_hidden_door = False
+        self.enter_last_door = False
+        self.shift_ok = True
 
         # grafiki na rozpoczęcie i zakończenie gry
         self.intro_canvas = Actor("intro-canvas.png")
@@ -35,7 +39,7 @@ class Game:
         self.rooms = rooms_in_game
 
         # klucze
-        self.pocket = Actor("pocket.jpg")
+        self.pocket = Actor("pocket.png")
         self.pocket.pos = (1000, 100)
         self.keys_in_pocket = [key_00, key_01, key_02, key_03, key_04]
 
@@ -53,20 +57,21 @@ class Game:
         self.intro_canvas.draw()
         animate(self.intro_canvas, pos=(640, 320), duration=0.3, tween="linear")
 
-        draw_text("Przygoda", -450, -200, fontsize=32)
+        draw_text("Maks - powrót do szkoły", -450, -200, fontsize=32)
 
         # wprowadzenie: przedstawienie historii gry, zadania do wykonania, oraz klawisze aktywne w grze.
         story = (
-            "Tu opisujemy swoja przygode "
-            "ipsum dolor sit amet, consectetur adipiscing elit. Curabitur "
-            "at arcu sollicitudin, elementum velit a, tempus erat. Quisque sed"
-            "tortor id nibh ullamcorper dictum. Vivamus efficitur gravida mauris"
-            "ut mattis. Fusce fringilla facilisis sagittis. In mi risus, pellentesque"
-            "at sodales vitae, mattis vel nibh. Duis ac iaculis justo. Etiam a dolor eu"
+            "Co powiecie na stworzenie gry przygodowej, w której główny "
+            "bohater - Maks, aby dojść do finału, pokonuje "
+            "przeszkody i rozwiązuje zagadki? A co, jeśli dodam, że akcja "
+            "rozgrywa się w szkole, pozornie najnudniejszym miejscu "
+            "na świecie? Może wspólnie uda nam się to miejsce trochę, "
+            "ekhm... rozruszać? Znajdź i zbierz wszystkie klucze aby wejść do "
+            "rozsadzanej basami auli, na koncert najgorętszegobandu Europy! "
             "\n\n"
-            "klawisz'Q' - koniec gry"
+            "wyjście z gry - klawisz 'Q'"
             "\n\n"
-            "Spacja start gry"
+            "Naciśnij klawisz SPACJI, aby rozpocząć grę!"
         )
 
         screen.draw.text(
@@ -79,10 +84,10 @@ class Game:
         )
 
         # opis klawiszy kontrolnych
-        draw_text("otwarcie drzwi", 220, -55)
-        draw_text("chodzenie w lewo", 75, 175)
-        draw_text("podnoszenie", 220, 175)
-        draw_text("chodzenie prawo", 330, 175)
+        draw_text("przejdź przez drzwi", 200, -55)
+        draw_text("idź w lewo", 120, 175)
+        draw_text("weź klucz", 230, 175)
+        draw_text("idź w prawo", 330, 175)
 
     def draw_pocket(self):
         self.pocket.draw()
@@ -122,6 +127,64 @@ class Game:
             # to wracamy do 1
             self.hero.frame = 1
 
+    def enter_door(self):
+        # pobieramy element słownika
+        room = self.rooms[self.actual_room]
+        if len(room.doors):
+            for door in room.doors:
+                if (
+                    self.hero.x > door.x_left_door
+                    and self.hero.x < door.x_right_door
+                    and door.open
+                    and self.shift_ok
+                ):
+                    self.shift_ok = False
+                    # pobieramy nowy numer pomieszczenia i nazwę pliku tła
+                    new_room = door.next_room_number
+                    new_background_image = self.rooms[new_room].file_name
+                    # ustawiamy odpowiednie właściwości
+                    self.background_active = new_background_image
+                    self.actual_room = new_room
+                    # odblokowujemy po pół sekundy
+                    clock.schedule_unique(self.shift_do, 0.5)
+                    # przerywamy pętlę for i kończymy
+                    break
+
+    def shift_do(self):
+        self.shift_ok = True
+
+    def draw_key(self):
+        # dla każdego klucza w grze
+        for key in self.keys_in_pocket:
+            # jeżeli klucza nie ma w kieszeni odnalezionych i aktualny numer
+            # pomieszczenia jest taki sam jak numer pomieszczenia dla klucza
+            if not key.in_pocket and self.actual_room == key.room_number:
+                # wyświetlamy klucz
+                screen.blit(key.file_name, (key.place_on_floor, 475))
+
+    def get_key(self):
+        def check_all_keys(keys):
+            for any_key in keys:
+                if any_key.in_pocket is False:
+                    return False
+            else:
+                return True
+
+        # dla każdego klucza w grze
+        for key in self.keys_in_pocket:
+            # jeżeli klucza nie ma w kieszeni odnalezionych i aktualny numer
+            # pomieszczenia jest taki sam jak numer pomieszczenia dla klucza
+            # a nasz bohater jest blisko klucza
+            if (
+                not key.in_pocket
+                and self.actual_room == key.room_number
+                and (120 > self.hero.x - key.place_on_floor >= 0)
+            ):
+                # ustawiamy klucz jako znaleziony
+                key.in_pocket = True
+                # i sprawdzamy, czy znaleźliśmy już wszystkie klucze
+                self.all_keys_found = check_all_keys(self.keys_in_pocket)
+
     def update_game(self):
         """ ta metoda będzie wywoływana z funkcji update() programu głównego """
 
@@ -137,6 +200,12 @@ class Game:
                 self.hero_move("right")
             if keyboard.left:
                 self.hero_move("left")
+            if keyboard.up:
+                self.enter_door()
+            if keyboard.down:
+                self.get_key()
+            if self.all_keys_found:
+                self.show_hidden_door = True
 
     def draw_scene(self):
         """ ta metoda będzie wywoływana z funkcji draw() programu głównego """
@@ -147,6 +216,8 @@ class Game:
         if self.game_start:
             # rysujemy torbę z kluczami
             self.draw_pocket()
+            # rysujemy klucz, jeśli jest w tym pomieszczeniu
+            self.draw_key()
             # rysujemy głównego bohatera bazując na jego danych
             self.hero.draw()
 

@@ -14,6 +14,10 @@ class Game:
         self.game_finish = False
         self.actual_room = 5
         self.start_time = None
+        self.all_keys_found = False
+        self.show_hidden_door = False
+        self.enter_last_door = False
+        self.shift_ok = True
 
         # grafiki na rozpoczęcie i zakończenie gry
         self.intro_canvas = Actor("intro-canvas.png")
@@ -21,21 +25,21 @@ class Game:
         self.game_over_canvas = Actor("intro-gameover-canvas.png")
         self.game_over_canvas.pos = (320, -160)
 
-        # elementy związane z bohaterem
+        # elementy związane z naszym bohaterem
         self.floor_level = 460
         self.hero = Actor("character-right-01.png")
         self.hero.pos = (WIDTH / 2, self.floor_level)
-        # wyznaczanie rozmiarow gracza
+        # wyznaczenie rozmiarów gracza
         self.hero.height = 256
         self.hero.width = 140
         self.hero.frame = 1
         self.animation_step = 15
 
-        #słownik z opisami pomieszczeń
+        # słownik z opisami pomieszczeń
         self.rooms = rooms_in_game
 
         # klucze
-        self.pocket = Actor("pocket.jpg")
+        self.pocket = Actor("pocket.png")
         self.pocket.pos = (1000, 100)
         self.keys_in_pocket = [key_00, key_01, key_02, key_03, key_04]
 
@@ -49,13 +53,13 @@ class Game:
                 color=(187, 96, 191),
             )
 
-        # wyswietlenie ekranu startowego
+        # wyświetlenie ekranu startowego gry
         self.intro_canvas.draw()
         animate(self.intro_canvas, pos=(640, 320), duration=0.3, tween="linear")
 
         draw_text("Przygoda", -450, -200, fontsize=32)
 
-        # wprowadzenie: przedstawienie histori gry, obsługa klawiszy
+        # wprowadzenie: przedstawienie historii gry, zadania do wykonania, oraz klawisze aktywne w grze.
         story = (
             "Tu opisujemy swoja przygode "
             "ipsum dolor sit amet, consectetur adipiscing elit. Curabitur "
@@ -64,7 +68,7 @@ class Game:
             "ut mattis. Fusce fringilla facilisis sagittis. In mi risus, pellentesque"
             "at sodales vitae, mattis vel nibh. Duis ac iaculis justo. Etiam a dolor eu"
             "\n\n"
-            "klawisz'Q' - koniec gry"
+            "klawisz 'Q' - koniec gry"
             "\n\n"
             "Spacja start gry"
         )
@@ -79,10 +83,10 @@ class Game:
         )
 
         # opis klawiszy kontrolnych
-        draw_text("otwarcie drzwi", 220, -55)
-        draw_text("chodzenie w lewo", 75, 175)
-        draw_text("podnoszenie", 220, 175)
-        draw_text("chodzenie prawo", 330, 175)
+        draw_text("otwieranie drzwi", 200,-55)
+        draw_text("chodzenie w lewo", 75,175)
+        draw_text("podnoszenie", 220,175)
+        draw_text("chodzenie w prawo", 330,175)
 
     def draw_pocket(self):
         self.pocket.draw()
@@ -90,7 +94,7 @@ class Game:
         key_pos = [-200, -100, 0, 100, 200]
 
         temp = 0
-        # dla każedego klucza w liście kluczy
+        # dla każdego klucza w liście kluczy
         for key in self.keys_in_pocket:
             pos = (self.pocket.x + key_pos[temp] - 45, self.pocket.y - 10)
             temp += 1
@@ -103,15 +107,16 @@ class Game:
 
     def hero_move(self, direction):
         if direction == "right":
-            # jeżeli jest to mozliwe przesuwamy postać
+            # jeżeli jest to możliwe przesuwamy postać
             if self.hero.x < WIDTH - self.hero.width:
                 self.hero.x += self.animation_step
 
         if direction == "left":
+            # jeżeli jest to możliwe przesuwamy postać
             if self.hero.x > self.hero.width:
                 self.hero.x -= self.animation_step
 
-        # wstawiamy odpowiedni obraze animujacy ruch
+        # ustawiamy odpowiedni obrazek animujący ruch
         self.hero.image = f"character-{direction}-0{self.hero.frame}.png"
         # zwiększając numer obrazka następnym razem załadujemy inny,
         # co będzie pozornie wyglądało jak ruch
@@ -121,6 +126,63 @@ class Game:
             # to wracamy do 1
             self.hero.frame = 1
 
+    def enter_door(self):
+        # pobieramy element słownika
+        room = self.rooms[self.actual_room]
+        if len(room.doors):
+            for door in room.doors:
+                if (
+                    self.hero.x > door.x_left_door
+                    and self.hero.x < door.x_right_door
+                    and door.open
+                    and self.shift_ok
+                ):
+                    self.shift_ok = False
+                    # pobieramy nowy numer pomieszczenia i nazwę pliku tła
+                    new_room = door.next_room_number
+                    new_background_image = self.rooms[new_room].file_name
+                    # ustawiamy odpowiednie właściwości
+                    self.background_active = new_background_image
+                    self.actual_room = new_room
+                    # odblokowujemy po pół sekundy
+                    clock.schedule_unique(self.shift_do, 0.5)
+                    # przerywamy pętlę for i kończymy
+                    break
+
+    def shift_do(self):
+        self.shift_ok = True
+
+    def draw_key(self):
+        # dla każdego klucza w grze
+        for key in self.keys_in_pocket:
+            # jeżeli klucza nie ma w kieszeni odnalezionych i aktualny numer
+            # pomieszczenia jest taki sam jak numer pomieszczenia dla klucza
+            if not key.in_pocket and self.actual_room == key.room_number:
+                # wyświetlamy klucz
+                screen.blit(key.file_name, (key.place_on_floor, 475))
+
+    def get_key(self):
+        def check_all_keys(keys):
+            for any_key in keys:
+                if any_key.in_pocket is False:
+                    return False
+            else:
+                return True
+
+        # dla każdego klucza w grze
+        for key in self.keys_in_pocket:
+            # jeżeli klucza nie ma w kieszeni odnalezionych i aktualny numer
+            # pomieszczenia jest taki sam jak numer pomieszczenia dla klucza
+            # a nasz bohater jest blisko klucza
+            if (
+                not key.in_pocket
+                and self.actual_room == key.room_number
+                and (120 > self.hero.x - key.place_on_floor >= 0)
+            ):
+                # ustawiamy klucz jako znaleziony
+                key.in_pocket = True
+                # i sprawdzamy, czy znaleźliśmy już wszystkie klucze
+                self.all_keys_found = check_all_keys(self.keys_in_pocket)
 
     def update_game(self):
         """ ta metoda będzie wywoływana z funkcji update() programu głównego """
@@ -137,18 +199,24 @@ class Game:
                 self.hero_move("right")
             if keyboard.left:
                 self.hero_move("left")
+            if keyboard.up:
+                self.enter_door()
+            if keyboard.down:
+                self.get_key()
+            if self.all_keys_found:
+                self.show_hidden_door = True
 
     def draw_scene(self):
-        """ ta metoda będzie wywoływana z funkcji update() programu głównego """
-        screen.blit(self.background_active, self.background_position)
+        """ ta metoda będzie wywoływana z funkcji draw() programu głównego """
 
-    def draw_scene(self):
         # rysujemy tło
         screen.blit(self.background_active, self.background_position)
 
         if self.game_start:
             # rysujemy torbę z kluczami
             self.draw_pocket()
+            # rysujemy klucz, jeśli jest w tym pomieszczeniu
+            self.draw_key()
             # rysujemy głównego bohatera bazując na jego danych
             self.hero.draw()
 
@@ -171,6 +239,7 @@ class Key:
     # na razie nie robimy nic
     pass
 
+
 class Door:
     def __init__(self, room_number, door_position, next_room_number, open):
         """ self oznacza *siebie samego* - czyli konkretne drzwii """
@@ -184,6 +253,7 @@ class Door:
 
     # na razie nie robimy nic
     pass
+
 
 class Room:
     def __init__(self, room_number, room_name, can_move_lr, file_name, doors=[]):
@@ -203,6 +273,7 @@ class Room:
     # na razie nie robimy nic
     pass
 
+
 # podstawowe zmienne
 background_active = "corridor-01.jpg"
 
@@ -213,10 +284,8 @@ key_02 = Key("key-02.png", False, 16, 850)
 key_03 = Key("key-03.png", False, 4, 950)
 key_04 = Key("key-04.png", False, 0, 370)
 
-
 # tworzymy drzwi zgodnie z planem pomieszczeń
 # domyślnie każde z drzwi będzie otwarte
-
 door_00 = Door(0, 963, 5, True)
 door_01 = Door(3, 962, 8, True)
 door_02 = Door(5, 307, 15, True)
@@ -230,9 +299,9 @@ door_09 = Door(13, 327, 8, True)
 door_10 = Door(15, 307, 5, True)
 door_11 = Door(17, 932, 7, True)
 
-# tworzymy opisy pomieszczen zgodnie z planem
-room_00 = Room(0, "Biologia 01", 2, "biol-01.jpg", [door_00])
-room_01 = Room(1, "Biologia 02", 1, "biol-02.jpg")
+# tworzymy opisy pomieszczeń zgodnie z planem, najpierw tworzymy instancje klasy Room
+room_00 = Room(0, "Przyroda 01", 2, "biol-01.jpg", [door_00])
+room_01 = Room(1, "Przyroda 02", 1, "biol-02.jpg")
 room_03 = Room(3, "Sala Gimnastyczna 01", 2, "gym-01.jpg", [door_01])
 room_04 = Room(4, "Sala Gimnastyczna 02", 1, "gym-02.jpg")
 room_05 = Room(5, "Korytarz 01 lewy", 2, "corridor-01.jpg", [door_02, door_03])
@@ -246,8 +315,7 @@ room_16 = Room(16, "Matematyka 02", 1, "maths-02.jpg")
 room_17 = Room(17, "Informatyka 01", 2, "computer-science-01.jpg", [door_11])
 room_18 = Room(18, "Informatyka 02", 1, "computer-science-02.jpg")
 
-# nastepnie tworzymy sł¸ownik odpowiadajacy układowi pomieszczen na mapie
-
+# następnie tworzymy słownik odpowiadający numeracją układowi pomieszczeń na mapie
 rooms_in_game = {
     0: room_00,
     1: room_01,
@@ -265,21 +333,14 @@ rooms_in_game = {
     18: room_18,
 }
 
+
 # tworzymy zmienną gry
 game = Game(background_active, rooms_in_game)
+
 
 def update():
     game.update_game()
 
+
 def draw():
     game.draw_scene()
-
-
-
-
-
-
-
-
-
-
