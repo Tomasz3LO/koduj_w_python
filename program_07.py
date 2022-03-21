@@ -71,6 +71,7 @@ class Game:
             "klawisz 'Q' - koniec gry"
             "\n\n"
             "Spacja start gry"
+
         )
 
         screen.draw.text(
@@ -106,15 +107,31 @@ class Game:
                 screen.blit("question-mark.png", pos)
 
     def hero_move(self, direction):
+
+        # pobieramy flag em owiącą o tym w która stronę ma iśc bohater
+        move_flag = self.rooms[self.actual_room].can_move_lr
+
         if direction == "right":
             # jeżeli jest to możliwe przesuwamy postać
             if self.hero.x < WIDTH - self.hero.width:
                 self.hero.x += self.animation_step
+            else:
+                if move_flag == 2 or move_flag == 3:
+                    self.actual_room += 1
+                    self.hero.x = 10
 
         if direction == "left":
             # jeżeli jest to możliwe przesuwamy postać
             if self.hero.x > self.hero.width:
                 self.hero.x -= self.animation_step
+            else:
+                if move_flag == 1 or move_flag == 3:
+                    self.actual_room -= 1
+                    self.hero.x =  WIDTH - self.hero.width
+
+        # sprawdzamy tło dla nowego pomieszczenia
+        new_background_image = self.rooms[self.actual_room].file_name
+        self.background_active = new_background_image
 
         # ustawiamy odpowiedni obrazek animujący ruch
         self.hero.image = f"character-{direction}-0{self.hero.frame}.png"

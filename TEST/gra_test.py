@@ -67,7 +67,7 @@ class Game:
             "rozgrywa się w szkole, pozornie najnudniejszym miejscu "
             "na świecie? Może wspólnie uda nam się to miejsce trochę, "
             "ekhm... rozruszać? Znajdź i zbierz wszystkie klucze aby wejść do "
-            "rozsadzanej basami auli, na koncert najgorętszegobandu Europy! "
+            "rozsadzanej basami auli, na koncert najgorętszego bandu Europy! "
             "\n\n"
             "wyjście z gry - klawisz 'Q'"
             "\n\n"
@@ -107,15 +107,31 @@ class Game:
                 screen.blit("question-mark.png", pos)
 
     def hero_move(self, direction):
+
+        # pobieramy flagę mówiącą o tym, w którą stronę Maks może się przemieścić
+        move_flag = self.rooms[self.actual_room].can_move_lr
+
         if direction == "right":
             # jeżeli jest to możliwe przesuwamy postać
             if self.hero.x < WIDTH - self.hero.width:
                 self.hero.x += self.animation_step
+            else:
+                if move_flag == 2 or move_flag == 3:
+                    self.actual_room += 1
+                    self.hero.x = 10
 
         if direction == "left":
             # jeżeli jest to możliwe przesuwamy postać
             if self.hero.x > self.hero.width:
                 self.hero.x -= self.animation_step
+            else:
+                if move_flag == 1 or move_flag == 3:
+                    self.actual_room -= 1
+                    self.hero.x = WIDTH - self.hero.width
+
+        # sprawdzamy tło dla nowego pomieszczenia
+        new_background_image = self.rooms[self.actual_room].file_name
+        self.background_active = new_background_image
 
         # ustawiamy odpowiedni obrazek animujący ruch
         self.hero.image = f"character-{direction}-0{self.hero.frame}.png"
@@ -146,11 +162,11 @@ class Game:
                     self.background_active = new_background_image
                     self.actual_room = new_room
                     # odblokowujemy po pół sekundy
-                    clock.schedule_unique(self.shift_do, 0.5)
+                    clock.schedule_unique(self.shitf_do, 0.5)
                     # przerywamy pętlę for i kończymy
                     break
 
-    def shift_do(self):
+    def shitf_do(self):
         self.shift_ok = True
 
     def draw_key(self):
